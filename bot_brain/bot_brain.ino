@@ -24,6 +24,8 @@ void read_values(void);
 
 void setup()
 {
+  Serial.begin(9600);
+  
   pinMode(hEnablePinRight, OUTPUT);
   pinMode(hEnablePinLeft, OUTPUT);
   
@@ -41,7 +43,14 @@ void setup()
   digitalWrite(leftSensorInnerPin,HIGH);
   digitalWrite(rightSensorOuterPin,HIGH);
   digitalWrite(rightSensorInnerPin,HIGH);
-  
+
+   analogWrite(hEnablePinLeft, 255);
+   digitalWrite(leftControlMotorFront,HIGH);
+   digitalWrite(leftControlMotorBack,LOW);
+
+   analogWrite(hEnablePinRight, 255);
+   digitalWrite(rightControlMotorFront,HIGH);
+   digitalWrite(rightControlMotorBack,LOW);
   
 }
 
@@ -74,6 +83,9 @@ void read_values() {
   leftSensorInnerPinValue = analogRead(leftSensorInnerPin);
   rightSensorOuterPinValue = analogRead(rightSensorOuterPin);
   rightSensorInnerPinValue = analogRead(rightSensorInnerPin);
+
+  Serial.print("RightInnerPin: ");
+  Serial.println(rightSensorInnerPinValue);
 }
 
 void map_values() {
