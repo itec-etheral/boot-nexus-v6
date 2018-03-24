@@ -1,145 +1,258 @@
-const int hEnablePinRight = 9;
-const int rightControlMotorBack = 8;
-const int rightControlMotorFront = 7;
+#include <Servo.h>
 
-const int hEnablePinLeft = 3;
-const int leftControlMotorBack = 4;
-const int leftControlMotorFront = 2;
+//Front motor pins
+const int hEnablePin = 11;
+const int controlMotorBack = 7;
+const int controlMotorFront = 8;
 
-const int leftSensorOuterPin = A0;
-const int leftSensorInnerPin = A1;
-const int rightSensorOuterPin = A4;
-const int rightSensorInnerPin = A3;
+//servo 
+Servo backServo;
+const int servoAnglePin = 10;
+const int middleAngle = 82;
+const int leftAngle = middleAngle + 40;
+const int rightAngle = middleAngle - 30;
 
-int leftSensorOuterPinValue;
-int leftSensorInnerPinValue;
-int rightSensorOuterPinValue;
-int rightSensorInnerPinValue;
+// sensor
+const int leftSensorPin = A0;
+const int middleSensorPin = A1;
+const int rightSensorPin = A2;
 
-void LEFT (void);
-void RIGHT (void);
-void STOP (void);
-void map_values(void);
-void read_values(void);
+// sensor thresholds
+const int middleThreshold = 600;
+
+int leftSensorPinValue;
+int middleSensorPinValue;
+int rightSensorPinValue;
+
+//general power
+int hPower = 250;
+int lPower = 190; 
+
+// functions decleration
+void leftServo (int powerCase, int adjustDelay);
+void rightServo (int powerCase, int adjustDelay);
+void frontServo(void);
+void stopMotor (void);
+void mapValues(void);
+void readValues(void);
+void goForward(int power);
+void goBackwards(int power);
+void getSensorValues();
 
 void setup()
 {
   Serial.begin(9600);
-  
-  pinMode(hEnablePinRight, OUTPUT);
-  pinMode(hEnablePinLeft, OUTPUT);
-  
-  pinMode(rightControlMotorBack,OUTPUT);
-  pinMode(rightControlMotorFront,OUTPUT);
-  pinMode(leftControlMotorBack,OUTPUT);
-  pinMode(leftControlMotorFront,OUTPUT);
 
-  pinMode(leftSensorOuterPin,INPUT);
-  pinMode(leftSensorInnerPin,INPUT);
-  pinMode(rightSensorOuterPin, INPUT);
-  pinMode(rightSensorInnerPin, INPUT);
+  // setup pins motor
+  pinMode(hEnablePin, OUTPUT);
+  pinMode(controlMotorBack,OUTPUT);
+  pinMode(controlMotorFront,OUTPUT);
 
-  digitalWrite(leftSensorOuterPin,HIGH);
-  digitalWrite(leftSensorInnerPin,HIGH);
-  digitalWrite(rightSensorOuterPin,HIGH);
-  digitalWrite(rightSensorInnerPin,HIGH);
+  // setup pins sensors
+  pinMode(leftSensorPin,INPUT);
+  pinMode(middleSensorPin,INPUT);
+  pinMode(rightSensorPin, INPUT);
 
-   analogWrite(hEnablePinLeft, 255);
-   digitalWrite(leftControlMotorFront,HIGH);
-   digitalWrite(leftControlMotorBack,LOW);
+  //setup pin servo
+  backServo.attach(servoAnglePin);
 
-   analogWrite(hEnablePinRight, 255);
-   digitalWrite(rightControlMotorFront,HIGH);
-   digitalWrite(rightControlMotorBack,LOW);
-  
+  // activate something from inside 
+  digitalWrite(leftSensorPin,HIGH);
+  digitalWrite(middleSensorPin,HIGH);
+  digitalWrite(rightSensorPin,HIGH);
 }
 
 void loop() 
-{
- 
-digitalWrite(rightControlMotorFront,HIGH);
-digitalWrite(rightControlMotorBack,LOW);
-digitalWrite(leftControlMotorFront, HIGH);
-digitalWrite(leftControlMotorBack,LOW);
+{  
 
-while(1) {
+  getSensorValues();
+  forwardServo();
+  goForward(lPower);
+  // lpower - 15
   
-  read_values();
-  map_values();
+   if(middleSensorPinValue == 0 && leftSensorPinValue == 1 && rightSensorPinValue == 1) {
+    forwardServo();
+    goForward(lPower + 20);
+  } else 
   
-  if(leftSensorOuterPinValue + leftSensorInnerPinValue >
-     rightSensorOuterPinValue + rightSensorInnerPinValue) {
-    RIGHT();
-   } else if ( leftSensorOuterPinValue + leftSensorInnerPinValue <
-     rightSensorOuterPinValue + rightSensorInnerPinValue) {
-   LEFT();  
-   }
-}
-
-}
-
-void read_values() {
-  leftSensorOuterPinValue = analogRead(leftSensorOuterPin);
-  leftSensorInnerPinValue = analogRead(leftSensorInnerPin);
-  rightSensorOuterPinValue = analogRead(rightSensorOuterPin);
-  rightSensorInnerPinValue = analogRead(rightSensorInnerPin);
-
-  Serial.print("RightInnerPin: ");
-  Serial.println(rightSensorInnerPinValue);
-}
-
-void map_values() {
-  leftSensorOuterPinValue /= 1023;
-  leftSensorInnerPinValue /= 1023;
-  rightSensorOuterPinValue /= 1023;
-  rightSensorInnerPinValue /= 1023;
-}
-
-void LEFT (void) {
-   analogWrite(hEnablePinLeft, 30);
-   digitalWrite(leftControlMotorBack,LOW);
-   digitalWrite(leftControlMotorFront, HIGH);
+   if (middleSensorPinValue == 1 && leftSensorPinValue == 1 && rightSensorPinValue == 0) {
+    rightServo(0, 100);
+    goForward(lPower); 
+   } else 
    
-   while(leftSensorOuterPinValue + leftSensorInnerPinValue <
-     rightSensorOuterPinValue + rightSensorInnerPinValue)
-   {
-    digitalWrite(rightControlMotorFront, HIGH);
-    digitalWrite(rightControlMotorBack,LOW); 
-
-    read_values();
-    map_values();
+   if (middleSensorPinValue == 1 && leftSensorPinValue == 0 && rightSensorPinValue == 1) {
+    leftServo(0, 100);
+    goForward(lPower);
    }
-
-   analogWrite(hEnablePinLeft, 255);
-   digitalWrite(leftControlMotorFront,HIGH);
-   digitalWrite(leftControlMotorBack,LOW);
+//   } else if (middleSensorPinValue == 1 && leftSensorPinValue == 1 && rightSensorPinValue == 1) {
+//    forwardServo();
+//    stopMotor();
+//    }
+   
+  
+  
 }
 
-void RIGHT (void) {
-   analogWrite(hEnablePinRight, 30);
-   digitalWrite(rightControlMotorBack,LOW);
-   digitalWrite(rightControlMotorFront,HIGH);
+// function implementation
+void readValues(bool showData) {
+  leftSensorPinValue = analogRead(leftSensorPin);
+  middleSensorPinValue = analogRead(middleSensorPin);
+  rightSensorPinValue = analogRead(rightSensorPin);
 
-   while(leftSensorOuterPinValue + leftSensorInnerPinValue >
-     rightSensorOuterPinValue + rightSensorInnerPinValue)
-   { 
-    digitalWrite(leftControlMotorFront,HIGH);
-    digitalWrite(leftControlMotorBack,LOW);
+  if(showData) {
+    Serial.print("RightPin: ");
+    Serial.println(rightSensorPinValue);
 
-    read_values();
-    map_values();
+    Serial.print("MiddlePin: ");
+    Serial.println(middleSensorPinValue);
+
+    Serial.print("LeftPin: ");
+    Serial.println(leftSensorPinValue);
+    Serial.println("***********************************");
+    delay(5000);
+  }
+}
+
+void mapValues(bool showData) {
+//  leftSensorPinValue /= 1023;
+//  middleSensorPinValue /= 1023;
+//  rightSensorPinValue /= 1023;
+
+   if(leftSensorPinValue > middleThreshold)
+    leftSensorPinValue = 1;
+    else 
+    leftSensorPinValue = 0;
+
+   if(middleSensorPinValue > middleThreshold)
+    middleSensorPinValue = 1;
+    else 
+    middleSensorPinValue = 0;
+
+   if(rightSensorPinValue > middleThreshold)
+    rightSensorPinValue = 1;
+    else 
+    rightSensorPinValue = 0;
+
+  if(showData) {
+    Serial.print("RightPinMapped: ");
+    Serial.println(rightSensorPinValue);
+
+    Serial.print("MiddlePinMapped: ");
+    Serial.println(middleSensorPinValue);
+
+    Serial.print("LeftPinMapped: ");
+    Serial.println(leftSensorPinValue);
+    Serial.println("***********************************");
+    delay(2000);
+  }
+}
+
+void getSensorValues() {
+  readValues(false);
+  mapValues(false);
+}
+
+void leftServo (int powerCase, int adjustDelay) {
+
+  // 0 turbo
+  // 1 normal
+
+  switch(powerCase) {
+      case 0:
+        analogWrite(hEnablePin, hPower);
+        delay(adjustDelay);
+        backServo.write(rightAngle + 25);
+        delay(adjustDelay);
+        backServo.write(rightAngle + 15);
+        delay(adjustDelay);
+        backServo.write(rightAngle + 5);
+        delay(adjustDelay);
+        backServo.write(rightAngle);
+        analogWrite(hEnablePin, hPower - 30);
+        delay(adjustDelay);
+        analogWrite(hEnablePin, lPower + 80);
+        delay(adjustDelay);
+        analogWrite(hEnablePin, lPower + 50);
+        break;
+     case 1:
+        analogWrite(hEnablePin, hPower - 30);
+        backServo.write(rightAngle);
+        delay(adjustDelay + 100);
+        analogWrite(hEnablePin, lPower);
+        break;
     }
-
-   analogWrite(hEnablePinRight, 255);
-   digitalWrite(rightControlMotorFront,HIGH);
-   digitalWrite(rightControlMotorBack,LOW);
 }
 
-void STOP (void) {
-analogWrite(rightControlMotorBack,0);
-analogWrite(rightControlMotorFront,0);
-analogWrite(leftControlMotorBack,0);
-analogWrite(leftControlMotorFront,0);
+void rightServo (int powerCase, int adjustDelay) {
+  // 0 turbo
+  // 1 normal
+
+  switch(powerCase) {
+      case 0:
+        analogWrite(hEnablePin, hPower + 100);
+        delay(adjustDelay);
+        backServo.write(leftAngle - 25);
+        delay(adjustDelay);
+        backServo.write(leftAngle - 15);
+        delay(adjustDelay);
+        backServo.write(leftAngle - 5);
+        delay(adjustDelay);
+        backServo.write(leftAngle);
+        delay(adjustDelay);
+        analogWrite(hEnablePin, lPower + 100);
+        delay(adjustDelay);
+        analogWrite(hEnablePin, lPower + 100);
+        while(middleSensorPinValue == 1 && leftSensorPinValue == 1 && rightSensorPinValue == 0) { 
+          getSensorValues();
+        } 
+        break;
+     case 1:
+        analogWrite(hEnablePin, hPower - 30);
+        backServo.write(rightAngle);
+        delay(adjustDelay + 100);
+        analogWrite(hEnablePin, lPower);
+        break;
+    }
+}
+
+void forwardServo(void) {
+  backServo.write(middleAngle);
+}
+
+void goForward(int power) {
+
+  // forward polarity 
+  digitalWrite(controlMotorFront, HIGH);
+  digitalWrite(controlMotorBack, LOW);
+  
+  // zvac
+  int i;
+  analogWrite(hEnablePin,255);
+  delay(4);
+
+  // pwn
+  for(i = 0; i < 3 ; i++) {
+    if(i%2 == 0) { 
+      analogWrite(hEnablePin, power);
+      delay(10);
+    }
+    else { 
+      analogWrite(hEnablePin, 0);
+      delay(25);
+  }
+  
+  getSensorValues();
+  }
+}
+
+void goBackwards(int power) {
+  analogWrite(hEnablePin, power);
+  digitalWrite(controlMotorFront, LOW);
+  digitalWrite(controlMotorBack, HIGH);
+}
+
+void stopMotor (void) {
+  analogWrite(hEnablePin, 0);
 }
 
 

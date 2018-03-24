@@ -1,18 +1,21 @@
 #include <Servo.h>
 
 const int enablePinMotor = 11;
-const int controlMotorFront = 8;
-const int controlMotorBack = 7;
+const int controlMotorFront = 7;
+const int controlMotorBack = 8;
 
 Servo myServo;
 const int servoPin = 10;
 const int middlePoint = 82;
-const int leftPoint = middlePoint + 40;
-const int rightPoint = middlePoint - 40;
+const int leftPoint = middlePoint + 55;
+const int rightPoint = middlePoint - 50;
 
 int power;
-int lpower = 160;
+int lpower = 170;
 int hpower = 250;
+
+void right();
+void left();
 
 void setup() {
   Serial.begin(9600);
@@ -36,6 +39,8 @@ void setup() {
 
   Serial.println(power);
   delay(1000);
+
+  right();
 }
 
 void left(){
@@ -78,10 +83,9 @@ void right(){
 }
 
 void loop() {
-  //delay(2000);
-  
-  left();
-  delay(2000);
-  right();
-  delay(2000);
+ // delay(200);
+ // right();
+//  delay(200);
+//  left();
+right();
 }
